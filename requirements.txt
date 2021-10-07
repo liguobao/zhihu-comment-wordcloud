@@ -1,0 +1,10 @@
+bs4
+requests
+loguru
+pydantic
+jieba
+numpy
+pandas
+numpy
+lxml
+wordcloud
