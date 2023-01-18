@@ -2,17 +2,16 @@ from os import path
 import os
 from bs4 import BeautifulSoup
 import json
-from numpy import log
 import pandas as pd
 import matplotlib.pyplot as plt
 from wordcloud import WordCloud
 from string import punctuation
 import jieba
 import sys
-import io
 from concurrent.futures import ThreadPoolExecutor
 import threading
 from loguru import logger
+import argparse
 
 
 # 同义词字典
@@ -34,7 +33,8 @@ add_punc = '，。、【 】 “”：；（）《》‘’{}？！⑦()、%^>�
 stopwords = [line.strip() for line in open(
     '1.stop_words.txt', encoding='UTF-8').readlines()]
 # 专用停用词
-stopwords_dt = [line.strip() for line in open('1.stop_words.txt', encoding='UTF-8').readlines()]
+stopwords_dt = [line.strip() for line in open(
+    '1.stop_words.txt', encoding='UTF-8').readlines()]
 simple_words = read_simple_words_dict()
 
 jieba.load_userdict("./1.local_words.txt")
@@ -57,9 +57,11 @@ def cut_words_with_text(content_texts):
     return word_results_array
 
 # 生成云图
+
+
 def create_word_cloud_png(word_results_array, img_path):
-    #制作云图
-    #这个是创建一个云图，更改字体颜色等，大小等
+    # 制作云图
+    # 这个是创建一个云图，更改字体颜色等，大小等
     wc = WordCloud(
         font_path='./1.chinese.msyh.ttf',  #
         background_color='white',  # 背景颜色
@@ -71,19 +73,21 @@ def create_word_cloud_png(word_results_array, img_path):
         collocations=False,
         font_step=1
     )
-   #这里云图 传入数据必须是带有空格的才能识别
+   # 这里云图 传入数据必须是带有空格的才能识别
     s = wc.generate(' '.join(word_results_array))
-   #必须有这个才会显示图
+   # 必须有这个才会显示图
     plt.imshow(s)
-   #去除横纵坐标轴
+   # 去除横纵坐标轴
     plt.axis('off')
     plt.show()
-    #这个是图片存储
+    # 这个是图片存储
     s.to_file(img_path)
     logger.info(
         f"{threading.current_thread().name} create wordcloud img:{img_path} successfully.")
 
 # 处理云图需要的数据
+
+
 def create_word_cloud(date_index, data, base_dir="out"):
     img_path = f"./{base_dir}/{date_index.strftime('%Y%m%d_%H')}.png"
     contents = [record.content_text for _, record in data.iterrows()]
@@ -92,8 +96,9 @@ def create_word_cloud(date_index, data, base_dir="out"):
     word_results_array = cut_words_with_text(content_texts=contents)
     create_word_cloud_png(word_results_array, img_path)
 
-def create_word_cloud_by_all_data(file_name,data, base_dir="out"):
-    img_path = f"./{base_dir}/{file_name}.png"
+
+def create_word_cloud_by_all_data(file_name, data):
+    img_path = f"{file_name}.png"
     contents = [record.content_text for _, record in data.iterrows()]
     if len(contents) == 0:
         return
@@ -107,16 +112,13 @@ def contents_stats(date_index, data):
 
 
 if __name__ == "__main__":
-    # 20211007_comments_75764.json 为2.to_json.py 产生的文件
-    # id,created_time,content_text 数组
-    file_path = sys.argv[1] if len(
-        sys.argv) > 1 else "./20211007_comments_75764.json"
-    pd_data = pd.read_json(file_path)
-    rule_name = "8h"
-    out_path = f"./out_{rule_name}"
-    if not path.exists(out_path):
-        os.mkdir(out_path)
-    hour_resample_results = pd_data.resample(
-        rule_name, on='created_time')
-    for dt_index, data in hour_resample_results:
-        create_word_cloud(dt_index, data, out_path)
+    parse = argparse.ArgumentParser(prog='zhihu_comments_donwload')
+    parse.add_argument(
+        '-file', '--file_path', help='file_path')
+    cmd_args = parse.parse_args()
+    file_path = cmd_args.file_path
+    if file_path:
+        pd_data = pd.read_json(file_path)
+        create_word_cloud_by_all_data(file_path, pd_data)
+    else:
+        parse.print_help()

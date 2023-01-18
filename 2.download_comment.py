@@ -1,4 +1,6 @@
 import argparse
+from os import path
+import os
 import requests
 from loguru import logger
 import time
@@ -24,6 +26,14 @@ deaulft_headers = {
 
 
 def load_answer_comments(req_url):
+    """加载单页评论数据
+
+    Args:
+        req_url (_type_): _description_
+
+    Returns:
+        _type_: _description_
+    """
     payload = {}
     try:
         response = requests.request(
@@ -33,9 +43,10 @@ def load_answer_comments(req_url):
                 f"load_answer_comments fail,req_url:{req_url},response:{response.text}")
             return [], None
         comments = response.json().get("data")
+        # 处理下一页
         if response.json().get("paging", {}).get("is_end", None) == True:
             next_url = None
-        else: 
+        else:
             next_url = response.json().get("paging", {}).get("next")
         return comments, next_url
     except Exception as err:
@@ -52,6 +63,10 @@ def write_json(answer_comments):
 
 
 def download_all_comment(answer_id):
+    """下载所有的评论
+    Args:
+        answer_id (_type_): _description_
+    """
     # 2142391477 为回答Id，
     answer_comment_url = f"https://www.zhihu.com/api/v4/answers/{answer_id}/comments?order=reverse&limit=20&offset=0&status=open"
     page_comments, next_page_url = load_answer_comments(answer_comment_url)
@@ -76,6 +91,8 @@ if __name__ == "__main__":
     parse.add_argument(
         '-id', '--answer_id', help='answer_id:回答Id, 2142391477')
     cmd_args = parse.parse_args()
+    if not path.exists("./data"):
+        os.mkdir("./data")
     if cmd_args.answer_id:
         download_all_comment(cmd_args.answer_id)
     else:

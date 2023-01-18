@@ -9,8 +9,9 @@
 
 
 ## 项目代码说明
-
+- 1.local_words.txt 本地特定分词（优化分词结果）
 - 2.download_comment.py 下载全量评论
+- 2.word_cloud_all.py 全部数据生成词云
 - 2.word_cloud_by_dt 生成词云
 - 2.to_csv 将原始评论数据提取到CSV文件
 - 2.to_json 将原始评论数据提取到Json文件
