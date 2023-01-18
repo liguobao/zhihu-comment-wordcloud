@@ -5,6 +5,7 @@ import requests
 from loguru import logger
 import time
 import random
+import threading
 import json
 
 deaulft_headers = {
@@ -68,11 +69,12 @@ def download_all_comment(answer_id):
         answer_id (_type_): _description_
     """
     # 2142391477 为回答Id，
-    answer_comment_url = f"https://www.zhihu.com/api/v4/answers/{answer_id}/comments?order=reverse&limit=20&offset=0&status=open"
+    answer_comment_url = f"https://www.zhihu.com/api/v4/answers/{answer_id}/comments?order=reverse&limit=100&offset=0&status=open"
     page_comments, next_page_url = load_answer_comments(answer_comment_url)
     answer_comments = page_comments
     page_index = 0
     while next_page_url:
+        time.sleep(100)
         page_comments, next_page_url = load_answer_comments(next_page_url)
         answer_comments = answer_comments + page_comments
         logger.info(
