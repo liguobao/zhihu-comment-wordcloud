@@ -104,11 +104,17 @@ def create_word_cloud_by_all_data(file_name, data):
         return
     word_results_array = cut_words_with_text(content_texts=contents)
     create_word_cloud_png(word_results_array, img_path)
+    return img_path
 
 
 def contents_stats(date_index, data):
     contents = [record.content_text for _, record in data.iterrows()]
     logger.info(f"{date_index.strftime('%Y%m%d_%H')}：{len(contents)}")
+
+def to_word_cloud_img(file_path):
+    pd_data = pd.read_json(file_path)
+    img_path = create_word_cloud_by_all_data(file_path, pd_data)
+    return img_path
 
 
 if __name__ == "__main__":
@@ -118,7 +124,6 @@ if __name__ == "__main__":
     cmd_args = parse.parse_args()
     file_path = cmd_args.file_path
     if file_path:
-        pd_data = pd.read_json(file_path)
-        create_word_cloud_by_all_data(file_path, pd_data)
+        to_word_cloud_img(file_path=file_path)
     else:
         parse.print_help()

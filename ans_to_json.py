@@ -18,9 +18,11 @@ def to_json(file_path):
                 "content_text": BeautifulSoup(x.get("target").get('content'), "html.parser").text.replace("\n", ""),
                 "created_time": x.get("target").get("created_time")
             } for x in json_data]
-        with open(f"{file_path}_sample.json", "w+") as wf:
+        out_file_path = f"{file_path}_sample.json"
+        with open(f"{out_file_path}", "w+") as wf:
             wf.write(json.dumps(results, ensure_ascii=False, indent=4))
         logger.info(f"{file_path} to json successfully.")
+        return out_file_path
 
 
 if __name__ == "__main__":
