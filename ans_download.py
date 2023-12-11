@@ -4,11 +4,11 @@ import os
 import requests
 from loguru import logger
 import time
-import random
-import threading
 import webbrowser
 
 import json
+
+retry_count = 0
 
 deaulft_headers = {
     'authority': 'www.zhihu.com',
@@ -51,7 +51,10 @@ def load_answer_list(req_url):
                 logger.info(f"redirect_url:{redirect_url}")
                 webbrowser.open(redirect_url)
                 time.sleep(30)
-                return [], req_url
+                retry_count = retry_count + 1
+                if retry_count > 3:
+                    logger.error("retry_count > 3, exit")
+                    return [], None
             return [], None
         comments = response.json().get("data")
         # 处理下一页
@@ -74,21 +77,23 @@ def write_json(answer_comments):
 
 
 def download_all_answer(question_id):
-    
-    # 267147843 为问题Id，
-    request_url = f"https://www.zhihu.com/api/v4/questions/{question_id}/feeds?cursor=&include=data%5B%2A%5D.is_normal%2Cadmin_closed_comment%2Creward_info%2Cis_collapsed%2Cannotation_action%2Cannotation_detail%2Ccollapse_reason%2Cis_sticky%2Ccollapsed_by%2Csuggest_edit%2Ccomment_count%2Ccan_comment%2Ccontent%2Ceditable_content%2Cattachment%2Cvoteup_count%2Creshipment_settings%2Ccomment_permission%2Ccreated_time%2Cupdated_time%2Creview_info%2Crelevant_info%2Cquestion%2Cexcerpt%2Cis_labeled%2Cpaid_info%2Cpaid_info_content%2Creaction_instruction%2Crelationship.is_authorized%2Cis_author%2Cvoting%2Cis_thanked%2Cis_nothelp%3Bdata%5B%2A%5D.mark_infos%5B%2A%5D.url%3Bdata%5B%2A%5D.author.follower_count%2Cvip_info%2Cbadge%5B%2A%5D.topics%3Bdata%5B%2A%5D.settings.table_of_content.enabled&limit=5&offset=0&order=default&platform=desktop&session_id="
-    page_results, next_page_url = load_answer_list(request_url)
-    result_list = page_results
-    page_index = 0
-    while next_page_url:
-        time.sleep(0.1)
-        page_results, next_page_url = load_answer_list(next_page_url)
-        result_list = result_list + page_results
-        logger.info(
-            f"{page_index} crawl successfully, list count:{len(result_list)}")
-        # if int(len(answer_comments) % 10000) == 0 and len(answer_comments) >= 1000:
-        #     write_json(answer_comments)
-        page_index = page_index + 1
+    try:
+        # 267147843 为问题Id，
+        request_url = f"https://www.zhihu.com/api/v4/questions/{question_id}/feeds?cursor=&include=data%5B%2A%5D.is_normal%2Cadmin_closed_comment%2Creward_info%2Cis_collapsed%2Cannotation_action%2Cannotation_detail%2Ccollapse_reason%2Cis_sticky%2Ccollapsed_by%2Csuggest_edit%2Ccomment_count%2Ccan_comment%2Ccontent%2Ceditable_content%2Cattachment%2Cvoteup_count%2Creshipment_settings%2Ccomment_permission%2Ccreated_time%2Cupdated_time%2Creview_info%2Crelevant_info%2Cquestion%2Cexcerpt%2Cis_labeled%2Cpaid_info%2Cpaid_info_content%2Creaction_instruction%2Crelationship.is_authorized%2Cis_author%2Cvoting%2Cis_thanked%2Cis_nothelp%3Bdata%5B%2A%5D.mark_infos%5B%2A%5D.url%3Bdata%5B%2A%5D.author.follower_count%2Cvip_info%2Cbadge%5B%2A%5D.topics%3Bdata%5B%2A%5D.settings.table_of_content.enabled&limit=5&offset=0&order=default&platform=desktop&session_id="
+        page_results, next_page_url = load_answer_list(request_url)
+        result_list = page_results
+        page_index = 0
+        while next_page_url:
+            time.sleep(0.1)
+            page_results, next_page_url = load_answer_list(next_page_url)
+            result_list = result_list + page_results
+            logger.info(
+                f"{page_index} crawl successfully, list count:{len(result_list)}")
+            # if int(len(answer_comments) % 10000) == 0 and len(answer_comments) >= 1000:
+            #     write_json(answer_comments)
+            page_index = page_index + 1
+    except Exception as err:
+        logger.error(f"download_all_answer fail,question_id:{question_id},error:{err}")
     file_name = f"./data/{question_id}_{time.time()}.json"
     with open(file_name, "w+") as fp:
         fp.write(json.dumps(result_list, ensure_ascii=False, indent=4))
