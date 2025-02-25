@@ -13,6 +13,7 @@
     'use strict';
     var ans_list_key = "zhihu_ans_list";
     var ans_ids_key = "zhihu_ans_ids";
+    // 默认翻页到20页
     var max_page = 20;
     var current_page = 1;
     function include_ans_id(ans_id) {
@@ -95,6 +96,8 @@
             if (current_page > max_page) {
                 console.log("已达到最大页数，跳出");
                 clearInterval(task_interval);
+                console.log("自动导出JSON文件到本地");
+                exportToJSON();
             }
         }, 1000 * 10);
 
@@ -131,19 +134,39 @@
             URL.revokeObjectURL(url);
         }
 
+        // 导出为JSON文件
+        function exportToJSON() {
+            let stored = localStorage.getItem(ans_list_key) || '[]';
+            const blob = new Blob([stored], { type: 'application/json' });
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = "zhihu_answers.json";
+            a.click();
+            URL.revokeObjectURL(url);
+        }
+
         // 创建导出按钮
         function createExportButton() {
-            // 添加 JSZip 库
-            // const script = document.createElement('script');
-            // script.src = 'https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js';
-            // document.head.appendChild(script);
+            const buttonContainer = document.createElement('div');
+            buttonContainer.style.cssText = 'position: fixed; bottom: 20px; right: 20px; z-index: 9999; display: flex; gap: 10px;';
 
-            const button = document.createElement('button');
-            button.textContent = '导出回答';
-            button.style.cssText = 'position: fixed; bottom: 20px; right: 20px; z-index: 9999; padding: 10px;';
-            button.onclick = exportToMarkdown;
-            document.body.appendChild(button);
+            const mdButton = document.createElement('button');
+            mdButton.textContent = '导出Markdown';
+            mdButton.style.cssText = 'padding: 10px;';
+            mdButton.onclick = exportToMarkdown;
+
+            const jsonButton = document.createElement('button');
+            jsonButton.textContent = '导出JSON';
+            jsonButton.style.cssText = 'padding: 10px;';
+            jsonButton.onclick = exportToJSON;
+
+            buttonContainer.appendChild(mdButton);
+            buttonContainer.appendChild(jsonButton);
+            document.body.appendChild(buttonContainer);
         }
         createExportButton();
     });
+
+    console.log("下载知乎个人回答脚本加载完成，10秒后自动翻页，完成后可以点击按钮导出md文件~");
 })();
